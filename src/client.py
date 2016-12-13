@@ -1,21 +1,31 @@
 """Client.py for python echo server."""
 import socket
 
-destination_info = socket.getaddrinfo("127.0.0.1", 5000)
-stream_info = [i for i in destination_info if i[1] == socket.SOCK_STREAM][0]
-client = socket.socket(*stream_info[:3])
 
-if client.connect(stream_info[-1]):
-    return 'CONNECTED!'
+def client(message):
+    """Client side of the http-echo-server."""
+    destination_info = socket.getaddrinfo("127.0.0.1", 5006)
+    stream_info = [i for i in destination_info if i[1] == socket.SOCK_STREAM][0]
+    client = socket.socket(*stream_info[:3])
 
-# message = ''
-# buff = 8
+    try:
+        client.connect(stream_info[-1])
+    except:
+        raise ValueError("Connection not available.")
 
-# if len(client.recv(buff)) > 8:
-#     message += client.recv(buff)
-# else:
-#     message = client.recv(buff)
+    print('CONNECTED!')
+    client.sendall(message.encode("utf-8"))
+    return_message = ''
 
-# print(message.encode("utf-8"))
+    buffer_length = 8
+    message_complete = False
+    while not message_complete:
+        part = client.recv(buffer_length)
+        return_message += part.decode('utf8')
+        if len(part) < buffer_length:
+            break
+    client.close()
+    print(return_message)
+    
 
-# client.sendall(message.encode("utf-8"))
+client('This is a test message')
