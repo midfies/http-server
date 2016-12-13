@@ -28,6 +28,7 @@ def client(message):
         if len(part) < buffer_length:
             break
     client.close()
+    print(return_message)
     return return_message
 
 
