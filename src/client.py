@@ -1,5 +1,6 @@
 """Client.py for python echo server."""
 import socket
+import sys
 
 
 def client(message):
@@ -26,6 +27,7 @@ def client(message):
             break
     client.close()
     print(return_message)
-    
 
-client('This is a test message')
+
+if __name__ == "__main__":
+    client(sys.argv[1])
