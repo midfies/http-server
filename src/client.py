@@ -27,6 +27,7 @@ def client(message):
             break
     client.close()
     print(return_message)
+    return return_message
 
 
 if __name__ == "__main__":
