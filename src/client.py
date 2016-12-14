@@ -13,7 +13,7 @@ def client(message):
     else:
         msg = message.encode("utf8")
 
-    destination_info = socket.getaddrinfo("127.0.0.1", 5030)
+    destination_info = socket.getaddrinfo("127.0.0.1", 5000)
     stream_info = [i for i in destination_info if i[1] == socket.SOCK_STREAM][0]
     client = socket.socket(*stream_info[:3])
 

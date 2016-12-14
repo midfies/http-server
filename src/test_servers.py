@@ -17,4 +17,8 @@ MSG_TABLE = [
 def test_message_less_than_buffer(message):
     """Test message is smaller than a buffer."""
     from client import client
-    assert client(message) == message
+    assert client(message) == """
+    HTTP/1.1 200 OK\r\n
+    Content-Type: text/plain \r\n
+    \r\n
+    Thanks for connecting, friend."""
