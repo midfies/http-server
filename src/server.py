@@ -16,23 +16,33 @@ def server():
         try:
             conn, addr = server.accept()
             if conn:
-                return_message = ''
+                logged_message = ''
                 buffer_length = 8
                 message_complete = False
                 while not message_complete:
                     part = conn.recv(buffer_length)
-                    return_message += part.decode('utf8')
+                    logged_message += part.decode('utf8')
                     if len(part) < buffer_length:
                         break
-            if return_message[-3:] == 'EOF':
-                return_message = return_message[:-3]
-            conn.sendall(return_message.encode('utf8'))
+            if logged_message[-3:] == 'EOF':
+                logged_message = logged_message[:-3]
+            print(logged_message)
+            response_ok()
         except KeyboardInterrupt:
-            conn.close()
-            server.close()
-            sys.exit()
+            break
+        except(RuntimeError, SyntaxError, UnicodeError):
+            response_error()
         finally:
-            conn.close()
+            if conn:
+                conn.close()
+    server.close()
+    sys.exit()
+
+def response_ok():
+    pass
+
+def response_error():
+    pass
         
 
 if __name__ == '__main__':
