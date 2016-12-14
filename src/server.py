@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Server.py for python echo server."""
 
 import socket
@@ -9,7 +10,7 @@ def server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
     address = ('127.0.0.1', 5030)
     server.bind(address)
-    server.listen(5)
+    server.listen(1)
     print("Waiting for connection...")
     while True:
         try:
