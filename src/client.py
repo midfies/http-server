@@ -12,7 +12,7 @@ def client(message):
     else:
         msg = message.encode("utf8")
 
-    destination_info = socket.getaddrinfo("127.0.0.1", 5005)
+    destination_info = socket.getaddrinfo("127.0.0.1", 5006)
     stream_info = [i for i in destination_info if i[1] == socket.SOCK_STREAM][0]
     client = socket.socket(*stream_info[:3])
 
@@ -33,6 +33,8 @@ def client(message):
         return_message += part.decode('utf8')
         if len(part) < buffer_length:
             break
+    if return_message[-3:] == 'EOF':
+        return_message = return_message[:-3]
     client.close()
     print(return_message)
     return return_message

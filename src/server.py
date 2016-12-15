@@ -13,12 +13,13 @@ parse_request() - Splits header into parts and send header to response_ok() or r
 
 import socket
 import sys
+import os
 
 
 def server():
     """Place server into listening mode wating for connection."""
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    address = ('127.0.0.1', 5005)
+    address = ('127.0.0.1', 5006)
     server.bind(address)
     server.listen(1)
     while True:
@@ -38,6 +39,8 @@ def server():
                 logged_message = logged_message[:-3]
             print(logged_message)
             response = parse_request(logged_message)
+            if len(response) % buffer_length == 0:
+                response += 'EOF'
             conn.sendall(response.encode('utf8'))
         except KeyboardInterrupt:
             break
@@ -76,9 +79,10 @@ def response_error(error):
     return err_msg
 
 
-def parse_request(header):
+def parse_request(request):
     """Split Header from request and send header to response_ok or response_error depending on validity. Return message returned from those methods."""
-    split_header = header.split()
+    header = request.split('\r\n')
+    split_header = header[0].split()
     if len(split_header) != 3:
         response = response_error(split_header)
     elif split_header[0] != 'GET' or split_header[2] != 'HTTP/1.1':
@@ -86,6 +90,26 @@ def parse_request(header):
     else:
         response = response_ok()
     return response
+
+
+def resolve_uri(uri):
+    """Resolve the uri."""
+    root = 'webroot/'
+    files_in_directory = os.listdir(root)
+    uri_split = uri.split('/')
+    if len(uri_split) > 1:
+        if uri_split[0] in files_in_directory:
+            if uri_split[1] in os.listdir(root + uri_split[0]):
+                return 'Found in sub directory'
+            else:
+                return 'File not found in sub directory.'
+        else:
+            return 'Folder not found in root directory.'
+    elif uri in files_in_directory:
+            return 'Found in root.'
+    else:
+        return 'File not found'
+
 
 
 if __name__ == '__main__':
