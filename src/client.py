@@ -6,14 +6,13 @@ import sys
 
 def client(message):
     """Client side of the http-echo-server."""
-
     if sys.version_info[0] == 2:
         msg = message.decode("utf8")
         msg = msg.encode("utf8")
     else:
         msg = message.encode("utf8")
 
-    destination_info = socket.getaddrinfo("127.0.0.1", 5000)
+    destination_info = socket.getaddrinfo("127.0.0.1", 5005)
     stream_info = [i for i in destination_info if i[1] == socket.SOCK_STREAM][0]
     client = socket.socket(*stream_info[:3])
 
@@ -35,8 +34,6 @@ def client(message):
         if len(part) < buffer_length:
             break
     client.close()
-    # if sys.version_info[0] == 2:
-    #     return_message.encode('utf8')
     print(return_message)
     return return_message
 

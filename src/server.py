@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Server.py for python echo server."""
+"""
+Server.py for python server.
+
+server() - Basic server which once activated continuosly listens for client until keyboard interupt is given.
+
+response_ok() - Returns a generic 200 status code response.
+
+response_error() - Returns a specific 500 status code response depending on the issues with the header.
+
+parse_request() - Splits header into parts and send header to response_ok() or response_error() depending on the validity of the header.  The response from those methods are then returned.
+"""
 
 import socket
 import sys
@@ -8,7 +18,7 @@ import sys
 def server():
     """Place server into listening mode wating for connection."""
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    address = ('127.0.0.1', 5000)
+    address = ('127.0.0.1', 5005)
     server.bind(address)
     server.listen(1)
     while True:
@@ -27,16 +37,19 @@ def server():
             if logged_message[-3:] == 'EOF':
                 logged_message = logged_message[:-3]
             print(logged_message)
-            conn.sendall(response_ok().encode('utf8'))
-            print("Connection Received Succesfully")
+            response = parse_request(logged_message)
+            conn.sendall(response.encode('utf8'))
         except KeyboardInterrupt:
             break
-        except(RuntimeError, SyntaxError, UnicodeError):
-            conn.sendall(response_error().encode('utf8'))
+        except(TypeError, SyntaxError):
+            response_error()
             print("DANGER INTERNAL SERVER ERROR!! OVERLOAD OVERLOAD")
         finally:
             if conn:
                 conn.close()
+    print('Closing Connection with client...')
+    conn.close()
+    print('Closing Server...')
     server.close()
     print('Thanks for visiting!')
     sys.exit()
@@ -44,20 +57,35 @@ def server():
 
 def response_ok():
     """Send a 200 response."""
-    return """
-    HTTP/1.1 200 OK\r\n
-    Content-Type: text/plain \r\n
-    \r\n
-    Thanks for connecting, friend."""
+    return "HTTP/1.1 200 OK\r\nContent-Type: text/plain \r\n\r\nThanks for connecting, friend."
 
 
-def response_error():
-    """Send a 500 Server Error."""
-    return """
-    HTTP/1.1 500 Internal Server Error\r\n
-    Content-Type: text/plain\r\n
-    \r\n
-    You did a bad, bad thing."""
+def response_error(error):
+    """Build a 500 Server Error,define the error and return error message."""
+    err_msg = 'HTTP/1.1 500 Internal Server Error\r\n'
+    if len(error) < 3:
+        err_msg += 'HTTP Request requires 3 Method, URI, and Protocol.\r\n'
+    elif len(error) > 3:
+        err_msg += 'Unknown arguements passed with request.\r\n'
+    else:
+        if error[0] != 'GET':
+            err_msg += 'This server only accepts GET requests\r\n'
+        if error[2] != 'HTTP/1.1':
+            err_msg += 'Client must use HTTP/1.1\r\n'
+    err_msg += '\r\n'
+    return err_msg
+
+
+def parse_request(header):
+    """Split Header from request and send header to response_ok or response_error depending on validity. Return message returned from those methods."""
+    split_header = header.split()
+    if len(split_header) != 3:
+        response = response_error(split_header)
+    elif split_header[0] != 'GET' or split_header[2] != 'HTTP/1.1':
+        response = response_error(split_header)
+    else:
+        response = response_ok()
+    return response
 
 
 if __name__ == '__main__':
