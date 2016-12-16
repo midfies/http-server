@@ -14,12 +14,13 @@ parse_request() - Splits header into parts and send header to response_ok() or r
 import socket
 import sys
 import os
+import io
 
 
 def server():
     """Place server into listening mode wating for connection."""
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    address = ('127.0.0.1', 5006)
+    address = ('127.0.0.1', 5008)
     server.bind(address)
     server.listen(1)
     while True:
@@ -78,22 +79,20 @@ def response_error(error):
     err_msg += '\r\n'
     return err_msg
 
-def response_file_not_found(error):
-    """Build a 404 File Not Found error message"""
-    return 'HTTP/1.1 404 File Not Found\r\n' + error ' is not in directory.\r\n\r\n'
 
+def response_file_not_found(error):
+    """Build a 404 File Not Found error message."""
+    return 'HTTP/1.1 404 File Not Found\r\n' + error + ' is not in directory.\r\n\r\n'
 
 
 def parse_request(request):
     """Split Header from request and send header to response_ok or response_error depending on validity. Return message returned from those methods."""
     header = request.split('\r\n')
     split_header = header[0].split()
-    split_body = header[1].split()
     if len(split_header) != 3:
         response = response_error(split_header)
     elif split_header[0] != 'GET' or split_header[2] != 'HTTP/1.1':
         response = response_error(split_header)
-    elif split
     else:
         response = response_ok()
     return response
@@ -113,7 +112,12 @@ def resolve_uri(uri):
         else:
             return response_file_not_found(uri)
     elif uri in files_in_directory:
-            return 'Found in root.'
+            if "." in uri:
+                response = response_ok() + io.open(root + uri).read().replace("\n", " ")
+                return response
+            else:
+                response = prepare_directory(root + uri)
+                return response
     else:
         return response_file_not_found(uri)
 
@@ -126,7 +130,6 @@ def prepare_directory(folder):
         response += '<li>' + file + '</li>'
     response += '</ul></body></html>'
     return response
-
 
 
 if __name__ == '__main__':
