@@ -78,15 +78,22 @@ def response_error(error):
     err_msg += '\r\n'
     return err_msg
 
+def response_file_not_found(error):
+    """Build a 404 File Not Found error message"""
+    return 'HTTP/1.1 404 File Not Found\r\n' + error ' is not in directory.\r\n\r\n'
+
+
 
 def parse_request(request):
     """Split Header from request and send header to response_ok or response_error depending on validity. Return message returned from those methods."""
     header = request.split('\r\n')
     split_header = header[0].split()
+    split_body = header[1].split()
     if len(split_header) != 3:
         response = response_error(split_header)
     elif split_header[0] != 'GET' or split_header[2] != 'HTTP/1.1':
         response = response_error(split_header)
+    elif split
     else:
         response = response_ok()
     return response
@@ -102,13 +109,23 @@ def resolve_uri(uri):
             if uri_split[1] in os.listdir(root + uri_split[0]):
                 return 'Found in sub directory'
             else:
-                return 'File not found in sub directory.'
+                return response_file_not_found(uri)
         else:
-            return 'Folder not found in root directory.'
+            return response_file_not_found(uri)
     elif uri in files_in_directory:
             return 'Found in root.'
     else:
-        return 'File not found'
+        return response_file_not_found(uri)
+
+
+def prepare_directory(folder):
+    """Create a html doc with an unordered list of files in directory."""
+    listing = os.listdir(folder)
+    response = '<!DOCTYPE html><html><head><title>' + folder + '</title></head><body><ul>'
+    for file in listing:
+        response += '<li>' + file + '</li>'
+    response += '</ul></body></html>'
+    return response
 
 
 
