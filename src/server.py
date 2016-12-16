@@ -16,11 +16,13 @@ import sys
 import os
 import io
 
+IMAGES = ['jpg', 'jpeg', 'png']
+
 
 def server():
     """Place server into listening mode wating for connection."""
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    address = ('127.0.0.1', 5008)
+    address = ('127.0.0.1', 5020)
     server.bind(address)
     server.listen(1)
     while True:
@@ -46,7 +48,6 @@ def server():
         except KeyboardInterrupt:
             break
         except(TypeError, SyntaxError):
-            response_error()
             print("DANGER INTERNAL SERVER ERROR!! OVERLOAD OVERLOAD")
         finally:
             if conn:
@@ -59,9 +60,9 @@ def server():
     sys.exit()
 
 
-def response_ok():
+def response_ok(type):
     """Send a 200 response."""
-    return "HTTP/1.1 200 OK\r\nContent-Type: text/plain \r\n\r\nThanks for connecting, friend."
+    return "HTTP/1.1 200 OK Content-Type:" + type + ' '
 
 
 def response_error(error):
@@ -94,7 +95,7 @@ def parse_request(request):
     elif split_header[0] != 'GET' or split_header[2] != 'HTTP/1.1':
         response = response_error(split_header)
     else:
-        response = response_ok()
+        response = resolve_uri(split_header[1])
     return response
 
 
@@ -106,14 +107,29 @@ def resolve_uri(uri):
     if len(uri_split) > 1:
         if uri_split[0] in files_in_directory:
             if uri_split[1] in os.listdir(root + uri_split[0]):
-                return 'Found in sub directory'
+                if uri_split[1].split('.')[-1] in IMAGES:
+                    f = io.open(root + uri, 'rb')
+                    response = response_ok('image/' + uri_split[1].split('.')[-1]) + str(f.read())
+                else:
+                    response = response_ok('text/plain')
+                    f = io.open(root + uri)
+                    response += f.read().replace("\n", " ")
+                f.close()
+                return response
             else:
                 return response_file_not_found(uri)
         else:
             return response_file_not_found(uri)
     elif uri in files_in_directory:
             if "." in uri:
-                response = response_ok() + io.open(root + uri).read().replace("\n", " ")
+                if uri.split('.')[-1] in IMAGES:
+                    f = io.open(root + uri, 'rb')
+                    response = response_ok('image/' + uri.split('.')[-1]) + str(f.read())
+                else:
+                    response = response_ok('text/plain')
+                    f = io.open(root + uri)
+                    response += f.read().replace("\n", " ")
+                f.close()
                 return response
             else:
                 response = prepare_directory(root + uri)
