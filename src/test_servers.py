@@ -31,4 +31,4 @@ def test_message_less_than_buffer(message, response):
 def test_server_error():
     """Test server error."""
     from server import response_error
-    assert response_error() == 'HTTP/1.1 500 Internal Server Error\r\n'
+    assert response_error("adfafa") == '''HTTP/1.1 500 Internal Server Error\r\nUnknown arguements passed with request.\r\n\r\n'''
