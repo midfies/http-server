@@ -35,8 +35,6 @@ def client(message):
         if len(part) < buffer_length:
             break
     client.close()
-    # if sys.version_info[0] == 2:
-    #     return_message.encode('utf8')
     print(return_message)
     return return_message
 
