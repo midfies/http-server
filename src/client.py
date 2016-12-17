@@ -12,7 +12,7 @@ def client(msg):
     # else:
     #     msg = message.encode("utf8")
 
-    destination_info = socket.getaddrinfo("127.0.0.1", 5020)
+    destination_info = socket.getaddrinfo("127.0.0.1", 5055)
     stream_info = [i for i in destination_info if i[1] == socket.SOCK_STREAM][0]
     client = socket.socket(*stream_info[:3])
 
@@ -42,6 +42,10 @@ def client(msg):
 
 
 def parse_response(response):
+    x = response.decode('utf8')
+    y = x.split('\r\n')
+    z = y[2]
+    z = bytes(z[2:].encode('utf8'))
     header = response.split(b'\r\n')
     header_split = header[0].split()
     if header_split[1] == '200':

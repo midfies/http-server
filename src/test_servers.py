@@ -47,3 +47,4 @@ def test_get_directory_info(file, response):
 
 GET /make_time.py HTTP/1.1
 GET /images HTTP/1.1
+

@@ -15,14 +15,22 @@ import socket
 import sys
 import os
 import io
+import mimetypes
 
-IMAGES = ['jpg', 'jpeg', 'png']
+
+MEDIA_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'audio/mpeg',
+    'audio/ogg',
+    'video/mp4',
+]
 
 
 def server():
     """Place server into listening mode wating for connection."""
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    address = ('127.0.0.1', 5020)
+    address = ('127.0.0.1', 5055)
     server.bind(address)
     server.listen(1)
     while True:
@@ -41,9 +49,16 @@ def server():
             if logged_message[-3:] == 'EOF':
                 logged_message = logged_message[:-3]
             print(logged_message)
-            response = parse_request(logged_message)
+            header_lines = logged_message.split('\r\n')
+            split_header = header_lines[0].split()
+            if parse_request(split_header):
+                response = resolve_uri(split_header[1])
+
+            else:
+                response = response_error(split_header)
             if len(response) % buffer_length == 0:
                 response += 'EOF'
+            print('Response:', response)
             conn.sendall(response.encode('utf8'))
         except KeyboardInterrupt:
             break
@@ -62,7 +77,7 @@ def server():
 
 def response_ok(type):
     """Send a 200 response."""
-    return "HTTP/1.1 200 OK Content-Type:" + type + ' '
+    return "HTTP/1.1 200 OK Content-Type:" + type + '\r\n\r\n'
 
 
 def response_error(error):
@@ -86,56 +101,41 @@ def response_file_not_found(error):
     return 'HTTP/1.1 404 File Not Found\r\n' + error + ' is not in directory.\r\n\r\n'
 
 
-def parse_request(request):
-    """Split Header from request and send header to response_ok or response_error depending on validity. Return message returned from those methods."""
-    header = request.split('\r\n')
-    split_header = header[0].split()
-    if len(split_header) != 3:
-        response = response_error(split_header)
-    elif split_header[0] != 'GET' or split_header[2] != 'HTTP/1.1':
-        response = response_error(split_header)
-    else:
-        response = resolve_uri(split_header[1])
-    return response
+def parse_request(header, ):
+    """Return True if valid header."""
+    print('In Parse Request...')
+    if len(header) != 3:
+        return False
+    elif header[0] != 'GET' or header[2] != 'HTTP/1.1':
+        return False
+    return True
 
 
 def resolve_uri(uri):
     """Resolve the uri."""
     root = 'webroot/'
-    files_in_directory = os.listdir(root)
-    uri_split = uri.split('/')
-    if len(uri_split) > 1:
-        if uri_split[0] in files_in_directory:
-            if uri_split[1] in os.listdir(root + uri_split[0]):
-                if uri_split[1].split('.')[-1] in IMAGES:
-                    f = io.open(root + uri, 'rb')
-                    response = response_ok('image/' + uri_split[1].split('.')[-1]) + str(f.read())
-                else:
-                    response = response_ok('text/plain')
-                    f = io.open(root + uri)
-                    response += f.read().replace("\n", " ")
+    print("file is", search_directory(root + uri))
+    retrieved_file = search_directory(root + uri)
+    file_type = mimetypes.guess_type(uri)[0]
+    print('File Type is: ', file_type)
+    try:
+        if os.path.exists(retrieved_file):
+            if file_type in MEDIA_TYPES:
+                f = io.open(retrieved_file, 'rb')
+                response = response_ok(file_type) + str(f.read())
                 f.close()
-                return response
-            else:
-                return response_file_not_found(uri)
+            elif file_type == 'text/plain':
+                response = response_ok(file_type)
+                f = io.open(retrieved_file)
+                response += f.read().replace("\n", " ")
+                f.close()
+            elif os.path.isdir(root + uri):
+                response = response_ok('directory') + prepare_directory(root + uri)
         else:
-            return response_file_not_found(uri)
-    elif uri in files_in_directory:
-            if "." in uri:
-                if uri.split('.')[-1] in IMAGES:
-                    f = io.open(root + uri, 'rb')
-                    response = response_ok('image/' + uri.split('.')[-1]) + str(f.read())
-                else:
-                    response = response_ok('text/plain')
-                    f = io.open(root + uri)
-                    response += f.read().replace("\n", " ")
-                f.close()
-                return response
-            else:
-                response = prepare_directory(root + uri)
-                return response
-    else:
+            response = response_file_not_found(uri)
+    except IOError():
         return response_file_not_found(uri)
+    return response
 
 
 def prepare_directory(folder):
@@ -146,6 +146,10 @@ def prepare_directory(folder):
         response += '<li>' + file + '</li>'
     response += '</ul></body></html>'
     return response
+
+
+def search_directory(uri):                         
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), uri)
 
 
 if __name__ == '__main__':
