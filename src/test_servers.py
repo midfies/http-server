@@ -38,13 +38,9 @@ def test_message_less_than_buffer(message, response):
     from client import client
     assert client(message) == response
 
+
 @pytest.mark.parametrize('file, response', URI_TABLE)
 def test_get_directory_info(file, response):
     """Get the files from the root directory."""
     from server import resolve_uri
     assert resolve_uri(file) == response
-
-
-GET /make_time.py HTTP/1.1
-GET /images HTTP/1.1
-

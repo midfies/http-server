@@ -11,7 +11,6 @@ response_error() - Returns a specific 500 status code response depending on the 
 parse_request() - Splits header into parts and send header to response_ok() or response_error() depending on the validity of the header.  The response from those methods are then returned.
 """
 
-import socket
 import sys
 import os
 import io
@@ -27,22 +26,17 @@ MEDIA_TYPES = [
 ]
 
 
-def server():
+def server(socket, address):
     """Place server into listening mode wating for connection."""
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    address = ('127.0.0.1', 5055)
-    server.bind(address)
-    server.listen(1)
     while True:
         print("Waiting for connection...")
         try:
-            conn, addr = server.accept()
-            if conn:
+            if socket:
                 logged_message = ''
                 buffer_length = 8
                 message_complete = False
                 while not message_complete:
-                    part = conn.recv(buffer_length)
+                    part = socket.recv(buffer_length)
                     logged_message += part.decode('utf8')
                     if len(part) < buffer_length:
                         break
@@ -59,16 +53,16 @@ def server():
             if len(response) % buffer_length == 0:
                 response += 'EOF'
             print('Response:', response)
-            conn.sendall(response.encode('utf8'))
+            socket.sendall(response.encode('utf8'))
         except KeyboardInterrupt:
             break
         except(TypeError, SyntaxError):
             print("DANGER INTERNAL SERVER ERROR!! OVERLOAD OVERLOAD")
         finally:
-            if conn:
-                conn.close()
+            if socket:
+                socket.close()
     print('Closing Connection with client...')
-    conn.close()
+    socket.close()
     print('Closing Server...')
     server.close()
     print('Thanks for visiting!')
